@@ -55,6 +55,7 @@ private :
 
   ros::NodeHandle nh_;
   ros::Publisher pub_status_;
+  ros::Publisher pub_id_;
 
   void read();
   void write(std::string);

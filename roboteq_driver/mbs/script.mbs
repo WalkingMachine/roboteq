@@ -75,7 +75,7 @@ top:
 				setconfig(_ICAP, ch, 0)
 			end if
 		end if
-		
+
 		' Send feedback for this channel at 25Hz.
 		GoSub PrintFeedback
 	next
@@ -85,6 +85,13 @@ top:
 	if c = 5 then
 		GoSub PrintStatus
 		c = 0
+	end if
+
+	' Send ID messages for the controller at 15Hz.
+	i++
+	if i = 15 then
+		GoSub PrintId
+		i = 0
 	end if
 
 	wait(19)

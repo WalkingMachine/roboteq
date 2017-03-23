@@ -40,13 +40,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 
 // Link to generated source from Microbasic script file.
-// <<<<<<< HEAD
-// //extern const char* script_lines[];
-// extern const int script_ver = 30;
-// =======
+extern const int script_ver = 30;
 extern const char* script_lines[];
-extern const int script_ver = 8;
-// >>>>>>> 38e5658... Added base Drive ID
+// extern const int script_ver = 8;
 
 namespace roboteq {
 
@@ -58,7 +54,8 @@ Controller::Controller(const char *port, int baud)
     version_(""), start_script_attempts_(0), serial_(NULL),
     command("!", this), query("?", this), param("^", this)
 {
-  pub_status_ = nh_.advertise<roboteq_msgs::Status>("status", 1);
+    pub_status_ = nh_.advertise<roboteq_msgs::Status>("status", 1);
+    pub_id_ = nh_.advertise<roboteq_msgs::Id>("id", 1);
 }
 
 Controller::~Controller() {
@@ -118,7 +115,7 @@ void Controller::read() {
       else if (msg[1] == 'i') {
         processId(msg);
       }
-      receiving_script_messages = true;
+    //   receiving_script_messages = true;
     } else {
       // Unknown other message.
       ROS_WARN_STREAM("Unknown serial message received: " << msg);
@@ -250,19 +247,19 @@ void Controller::processId(std::string str) {
     std::vector<std::string> fields;
     roboteq_msgs::Id msg;
     boost::split(fields, str, boost::algorithm::is_any_of(":"));
-    if (fields.size() != 2) {
-      ROS_WARN("Wrong number of feedback fields. Dropping message.");
+    if (fields.size() != 3) {
+      ROS_WARN("ProcessId: Wrong number of feedback fields. Dropping message.");
       return;
     }
 
     try {
       msg.id = boost::lexical_cast<int>(fields[2]);
     } catch (std::bad_cast& e) {
-      ROS_WARN("Failure parsing feedback channel number. Dropping message.");
+      ROS_WARN("Failure parsing id channel number. Dropping message.");
       return;
     }
 
-  pub_status_.publish(msg);
+  pub_id_.publish(msg);
 
   return;
 }
