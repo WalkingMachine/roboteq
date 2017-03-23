@@ -103,7 +103,7 @@ PrintFeedback:
 	print(":", getvalue(_TEMP, ch+1))
 	print("\r")
 	Return
-	
+
 PrintStatus:
 	print("&s:", SCRIPT_VER)
 	print(":", getvalue(_FLTFLAG))
@@ -113,3 +113,9 @@ PrintStatus:
 	print(":", getvalue(_TEMP, 1))
 	print("\r")
 	Return
+
+	PrintStatus:
+		print("&i:", SCRIPT_VER)
+		print(":1")
+		print("\r")
+		Return

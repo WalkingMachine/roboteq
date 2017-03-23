@@ -27,6 +27,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "roboteq_driver/channel.h"
 
 #include "roboteq_msgs/Status.h"
+#include "roboteq_msgs/Id.h"
 #include "serial/serial.h"
 
 #include <boost/bind.hpp>
@@ -39,8 +40,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 
 // Link to generated source from Microbasic script file.
-//extern const char* script_lines[];
-extern const int script_ver = 30;
+// <<<<<<< HEAD
+// //extern const char* script_lines[];
+// extern const int script_ver = 30;
+// =======
+extern const char* script_lines[];
+extern const int script_ver = 8;
+// >>>>>>> 38e5658... Added base Drive ID
 
 namespace roboteq {
 
@@ -109,6 +115,10 @@ void Controller::read() {
       } else if (msg[1] == 'f') {
         processFeedback(msg);
       }
+      else if (msg[1] == 'i') {
+        processId(msg);
+      }
+      receiving_script_messages = true;
     } else {
       // Unknown other message.
       ROS_WARN_STREAM("Unknown serial message received: " << msg);
@@ -121,12 +131,6 @@ void Controller::read() {
         ROS_DEBUG("Attempt #%d to start MBS program.", start_script_attempts_);
         startScript();
         flush();
-      } else {
-        ROS_DEBUG("Attempting to download MBS program.");
-        //if (downloadScript()) {
-          //start_script_attempts_ = 0;
-        //}	
-        ros::Duration(1.0).sleep();
       }
     } else {
       ROS_DEBUG("Script is believed to be in-place and running, so taking no action.");
@@ -152,7 +156,7 @@ void Controller::processStatus(std::string str) {
   msg.header.stamp = ros::Time::now();
 
   std::vector<std::string> fields;
-  boost::split(fields, str, boost::algorithm::is_any_of(":"));	
+  boost::split(fields, str, boost::algorithm::is_any_of(":"));
   try {
     int reported_script_ver = boost::lexical_cast<int>(fields[1]);
     static int wrong_script_version_count = 0;
@@ -163,7 +167,8 @@ void Controller::processStatus(std::string str) {
         ROS_WARN_STREAM("Script version mismatch. Expecting " << script_ver <<
             " but controller consistently reports " << reported_script_ver << ". " <<
             ". Now attempting download.");
-        //downloadScript();
+
+        // downloadScript();
       }
       return;
     }
@@ -179,7 +184,7 @@ void Controller::processStatus(std::string str) {
   } catch (std::bad_cast& e) {
     ROS_WARN("Failure parsing status data. Dropping message.");
     return;
-  }		
+  }
 
   pub_status_.publish(msg);
 }
@@ -206,44 +211,60 @@ void Controller::processFeedback(std::string msg) {
   }
 }
 
-/*bool Controller::downloadScript() {
-  ROS_DEBUG("Commanding driver to stop executing script.");
 
-  // Stop the running script, flag us to start it up again after..
-  stopScript();
-  flush();
-  receiving_script_messages_ = false;
+// bool Controller::downloadScript() {
+//   ROS_DEBUG("Commanding driver to stop executing script.");
+//   stopScript(); flush();
+//   ros::Duration(0.5).sleep();
+//   serial_->read();  // Clear the buffer.
+//
+//   // Send SLD.
+//   ROS_DEBUG("Commanding driver to enter download mode.");
+//   write("%SLD 321654987"); flush();
+//
+//   // Look for special ack from SLD.
+//   for (int find_ack = 0; find_ack < 7; find_ack++) {
+//     std::string msg = serial_->readline(max_line_length, eol);
+//     ROS_DEBUG_STREAM_NAMED("serial", "HLD-RX: " << msg);
+//     if (msg == "HLD\r") goto found_ack;
+//   }
+//   ROS_DEBUG("Could not enter download mode.");
+//   return false;
+//   found_ack:
+//
+//   // Send hex program, line by line, checking for an ack from each line.
+//   int line_num = 0;
+//   while(script_lines[line_num]) {
+//     std::string line(script_lines[line_num]);
+//     write(line);
+//     flush();
+//     std::string ack = serial_->readline(max_line_length, eol);
+//     ROS_DEBUG_STREAM_NAMED("serial", "ACK-RX: " << ack);
+//     if (ack != "+\r") return false;
+//     line_num++;
+//   }
+//   return true;
+// }
 
-  // Clear serial buffer to avoid any confusion.
-  ros::Duration(0.5).sleep();
-  serial_->read();
+void Controller::processId(std::string str) {
+    std::vector<std::string> fields;
+    roboteq_msgs::Id msg;
+    boost::split(fields, str, boost::algorithm::is_any_of(":"));
+    if (fields.size() != 2) {
+      ROS_WARN("Wrong number of feedback fields. Dropping message.");
+      return;
+    }
 
-  // Send SLD.
-  ROS_DEBUG("Commanding driver to enter download mode.");
-  write("%SLD 321654987"); flush();
+    try {
+      msg.id = boost::lexical_cast<int>(fields[2]);
+    } catch (std::bad_cast& e) {
+      ROS_WARN("Failure parsing feedback channel number. Dropping message.");
+      return;
+    }
 
-  // Look for special ack from SLD.
-  for (int find_ack = 0; find_ack < 7; find_ack++) {
-    std::string msg = serial_->readline(max_line_length, eol);
-    ROS_DEBUG_STREAM_NAMED("serial", "HLD-RX: " << msg);
-    if (msg == "HLD\r") goto found_ack;
-  }
-  ROS_DEBUG("Could not enter download mode.");
-  return false;
-  found_ack:
+  pub_status_.publish(msg);
 
-  // Send hex program, line by line, checking for an ack from each line.
-  int line_num = 0;
-  while(script_lines[line_num]) {
-    std::string line(script_lines[line_num]);
-    write(line);
-    flush();
-    std::string ack = serial_->readline(max_line_length, eol);
-    ROS_DEBUG_STREAM_NAMED("serial", "ACK-RX: " << ack);
-    if (ack != "+\r") return false;
-    line_num++;
-  }
-  return true;
-} */
+  return;
+}
 
 }  // namespace roboteq
