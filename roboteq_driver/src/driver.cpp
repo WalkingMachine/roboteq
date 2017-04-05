@@ -33,16 +33,21 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "~");
   ros::NodeHandle nh("~");
 
-  std::string port = "/dev/ttyUSB0";
-  int32_t baud = 115200;
-  nh.param<std::string>("port", port, port);
-  nh.param<int32_t>("baud", baud, baud);
+  // std::string port = "/dev/ttyUSB0";
+  std::string port;
+  // int32_t baud = 115200;
+  int32_t baud;
+  nh.getParam("port", port);
+  // nh.param<std::string>("port", port, port);
+  nh.getParam("baud", baud);
+  // nh.param<int32_t>("baud", baud, baud);
 
   // Interface to motor controller.
   roboteq::Controller controller(port.c_str(), baud);
 
   while (!controller.connected()) {
     controller.connect();
+    ROS_INFO("POST USED : %s", port.c_str());
     sleep(1);
   }
   controller.getId();

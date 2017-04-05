@@ -1,6 +1,6 @@
 <launch>
   <arg name="port" default="/dev/ttyACM0" />
-  <node pkg="roboteq_driver" type="driver_node" name="roboteq_driver0" output="screen">
+  <node pkg="roboteq_driver" type="driver_node" ns="roboteq_driver0" name="roboteq_driver" output="screen">
     <param name="port" value="$(arg port)" />
     <param name="value" value="250000" />
   </node>
