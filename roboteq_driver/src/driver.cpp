@@ -30,17 +30,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "~");
+  ros::init(argc, argv, "drive");
   ros::NodeHandle nh("~");
 
   // std::string port = "/dev/ttyUSB0";
   std::string port;
-  // int32_t baud = 115200;
-  int32_t baud;
+  int32_t baud = 115200;
   nh.getParam("port", port);
-  // nh.param<std::string>("port", port, port);
   nh.getParam("baud", baud);
-  // nh.param<int32_t>("baud", baud, baud);
 
   // Interface to motor controller.
   roboteq::Controller controller(port.c_str(), baud);
@@ -51,7 +48,9 @@ int main(int argc, char **argv) {
     sleep(1);
   }
   controller.getId();
+  ROS_INFO("ID: %i", controller.id);
 
+  std::string ns = "/drive" + boost::lexical_cast<std::string>(controller.id);
   // Setup channels.
   if (nh.hasParam("channels")) {
     XmlRpc::XmlRpcValue channel_namespaces;
@@ -59,12 +58,15 @@ int main(int argc, char **argv) {
     ROS_ASSERT(channel_namespaces.getType() == XmlRpc::XmlRpcValue::TypeArray);
     for (int i = 0; i < channel_namespaces.size(); ++i)
     {
+      ROS_INFO("THERE IS A CHANNEL");
       ROS_ASSERT(channel_namespaces[i].getType() == XmlRpc::XmlRpcValue::TypeString);
-      controller.addChannel(new roboteq::Channel(1 + i, channel_namespaces[i], &controller));
+      controller.addChannel(new roboteq::Channel(1 + i, ns, &controller, controller.id));
     }
   } else {
+    ROS_INFO("NO CHANNEL, use default ~ ");
+
     // Default configuration is a single channel in the node's namespace.
-    controller.addChannel(new roboteq::Channel(1, "~", &controller));
+    controller.addChannel(new roboteq::Channel(1, ns, &controller, controller.id));
   }
   // Attempt to connect and run.
   while (ros::ok()) {

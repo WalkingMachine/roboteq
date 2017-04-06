@@ -36,13 +36,11 @@ extern int id;
 
 namespace roboteq {
 
-Channel::Channel(int channel_num, std::string ns, Controller* controller) :
+Channel::Channel(int channel_num, std::string ns, Controller* controller, int ID) :
   channel_num_(channel_num), nh_(ns), controller_(controller), max_rpm_(MAX_RPM),
   last_mode_(255)
 {
-  pub_status_ = nh_.advertise<roboteq_msgs::Status>("status" + boost::lexical_cast<std::string>(id), 1);
-  pub_id_ = nh_.advertise<roboteq_msgs::Id>("id" + boost::lexical_cast<std::string>(id), 1);
-
+  id = ID;
   pub_feedback_ = nh_.advertise<roboteq_msgs::Feedback>("feedback" + boost::lexical_cast<std::string>(id), 1);
   sub_cmd_ = nh_.subscribe("cmd" + boost::lexical_cast<std::string>(id), 1, &Channel::cmdCallback, this);
 

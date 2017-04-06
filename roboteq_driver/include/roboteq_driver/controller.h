@@ -114,7 +114,7 @@ protected:
 public :
   Controller (const char *port, int baud);
   ~Controller();
-
+  int id;
   void addChannel(Channel* channel);
   void connect();
   void getId();

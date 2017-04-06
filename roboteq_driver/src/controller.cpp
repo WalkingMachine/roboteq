@@ -73,6 +73,9 @@ void Controller::connect() {
   serial_->setPort(port_);
   serial_->setBaudrate(baud_);
 
+  ROS_INFO("PORT: %s", port_);
+  ROS_INFO("BAUD: %i", baud_);
+
   for (int tries = 0; tries < 5; tries++) {
     try {
       serial_->open();
@@ -258,6 +261,10 @@ void Controller::getId() {
           idSet = true;
         }
       }
+    }
+
+    if( !idSet){
+      ROS_WARN("ID couldn't be set. Dropping message.");
     }
   }
 

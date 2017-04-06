@@ -44,7 +44,7 @@ class Controller;
 
 class Channel {
 public:
-  Channel(int channel_num, std::string ns, Controller* controller);
+  Channel(int channel_num, std::string ns, Controller* controller, int ID);
   void feedbackCallback(std::vector<std::string>);
   void SetTopics(std::string id);
 
