@@ -1,6 +1,8 @@
 roboteq
 =======
 
+HOTFIX THIS BRANCH MUST BE DELETED SOON - by @gzsierra
+
 ROS driver for serial Roboteq motor controllers. This driver is suitable for use with Roboteq's
 Advanced Digital Motor Controllers, as described in [this document][1]. Devices include:
 
