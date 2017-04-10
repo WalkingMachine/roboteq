@@ -262,10 +262,6 @@ void Controller::getId() {
         }
       }
     }
-
-    if( !idSet){
-      ROS_WARN("ID couldn't be set. Dropping message.");
-    }
   }
 
   pub_status_ = nh_.advertise<roboteq_msgs::Status>("status" + boost::lexical_cast<std::string>(id), 1);
@@ -278,7 +274,7 @@ void Controller::setID(std::string str) {
   std::vector<std::string> fields;
   boost::split(fields, str, boost::algorithm::is_any_of(":"));
   if (fields.size() != 3) {
-    ROS_WARN("ProcessId: Wrong number of feedback fields. Dropping message.");
+    ROS_WARN("setID: Wrong number of fields, must be 3. Dropping message.");
     return;
   }
 

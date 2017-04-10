@@ -63,15 +63,14 @@ int main(int argc, char **argv) {
       controller.addChannel(new roboteq::Channel(1 + i, ns, &controller, controller.id));
     }
   } else {
-    ROS_INFO("NO CHANNEL, use default ~ ");
+    ROS_INFO("NO CHANNEL, will use default /drive<ID> ");
 
     // Default configuration is a single channel in the node's namespace.
     controller.addChannel(new roboteq::Channel(1, ns, &controller, controller.id));
   }
   // Attempt to connect and run.
   while (ros::ok()) {
-    ROS_DEBUG("Attempting connection to %s at %i baud.", port.c_str(), baud);
-    // controller.connect();
+    ROS_DEBUG("Connection to %s at %i baud is successful.", port.c_str(), baud);
     if (controller.connected()) {
       ros::AsyncSpinner spinner(1);
       spinner.start();
