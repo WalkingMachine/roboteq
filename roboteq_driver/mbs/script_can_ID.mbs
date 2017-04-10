@@ -16,8 +16,8 @@ setcommand(_VAR, 1, -1)
 ' are a reference to this document:
 ' www.roboteq.com/index.php/docman/motor-controllers-documents-and-files/documentation/user-manual/7-nextgen-controllers-user-manual/file
 
-setconfig(_ECHOF, 1) ' Serial echo off (p195)
-setconfig(_RWD, 110) ' Watchdog timeout, milliseconds (p195)
+'setconfig(_ECHOF, 1) ' Serial echo off (p195)
+'setconfig(_RWD, 110) ' Watchdog timeout, milliseconds (p195)
 
 ' Undervoltage/overvoltage limits (p214)
 setconfig(_OVL, 300)
@@ -25,10 +25,10 @@ setconfig(_UVL, 210)
 
 for ch = 1 andwhile ch <= MAX_CHANNELS evaluate ch++
 	' Encoder, speed config (p208, p221)
-	setconfig(_EMOD, ch, 18)
-	setconfig(_EPPR, ch, 500)
-	setconfig(_MXRPM, ch, 1000)
-	setconfig(_CLERD, ch, 0)
+	'setconfig(_EMOD, ch, 18)
+	'setconfig(_EPPR, ch, 500)
+	'setconfig(_MXRPM, ch, 1000)
+	'setconfig(_CLERD, ch, 0)
 
 	' Current limit (p216)
 	setconfig(_ALIM, ch, 1500)
@@ -46,36 +46,8 @@ top:
 	for ch = 1 andwhile ch <= MAX_CHANNELS evaluate ch++
 		if last_mode[ch - 1] <> getvalue(_VAR, ch) then
 			last_mode[ch - 1] = getvalue(_VAR, ch)
-
-			' Motor to be stopped (high-Z).
-			if getvalue(_VAR, ch) = -1 then
-				setconfig(_MMOD, ch, 1)
-				setconfig(_KP, ch, 0)
-				setconfig(_KI, ch, 0)
-				setconfig(_KD, ch, 0)
-				setconfig(_ICAP, ch, 0)
-				setcommand(_G, ch, 0)
-			end if
-
-			' Motor in velocity-control mode.
-			if getvalue(_VAR, ch) = 0 then
-				setconfig(_MMOD, ch, 1)
-				setconfig(_KP, ch, 0)
-				setconfig(_KI, ch, 2)
-				setconfig(_KD, ch, 1)
-				setconfig(_ICAP, ch, 80)
-			end if
-
-			' Motor in position-control mode.
-			if getvalue(_VAR, ch) = 1 then
-				setconfig(_MMOD, ch, 3)
-				setconfig(_KP, ch, 2)
-				setconfig(_KI, ch, 0)
-				setconfig(_KD, ch, 0)
-				setconfig(_ICAP, ch, 0)
-			end if
 		end if
-
+		
 		' Send feedback for this channel at 25Hz.
 		GoSub PrintFeedback
 	next
@@ -86,8 +58,7 @@ top:
 		GoSub PrintStatus
 		c = 0
 	end if
-
-	' Send ID messages for the controller at 15Hz.
+	
 	i++
 	if i = 15 then
 		GoSub PrintId
@@ -110,7 +81,7 @@ PrintFeedback:
 	print(":", getvalue(_TEMP, ch+1))
 	print("\r")
 	Return
-
+	
 PrintStatus:
 	print("&s:", SCRIPT_VER)
 	print(":", getvalue(_FLTFLAG))
@@ -120,9 +91,9 @@ PrintStatus:
 	print(":", getvalue(_TEMP, 1))
 	print("\r")
 	Return
-
+	
 PrintId:
-	print("&i:", SCRIPT_VER)
+	print("&i:", ch)
 	print(":1")
 	print("\r")
 	Return

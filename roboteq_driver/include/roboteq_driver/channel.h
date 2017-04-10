@@ -22,6 +22,10 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSE
 WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
+#define ENCODER_TICKS 500
+#define MAX_RPM 1000
+
 #ifndef ROBOTEQ_CHANNEL
 #define ROBOTEQ_CHANNEL
 
@@ -32,18 +36,63 @@ namespace roboteq_msgs {
   ROS_DECLARE_MESSAGE(Feedback);
 }
 
+extern int id;
+
 namespace roboteq {
 
 class Controller;
 
 class Channel {
 public:
-  Channel(int channel_num, std::string ns, Controller* controller);
+  Channel(int channel_num, std::string ns, Controller* controller, int ID);
   void feedbackCallback(std::vector<std::string>);
+  void SetTopics(std::string id);
 
 protected:
+  /**
+   * @param x Angular velocity in radians/s.
+   * @return Angular velocity in RPM.
+   */
+  static double to_rpm(double x)
+  {
+    return x * 60 / (2 * M_PI);
+  }
+
+  /**
+   * @param x Angular velocity in RPM.
+   * @return Angular velocity in rad/s.
+   */
+  static double from_rpm(double x)
+  {
+    return x * (2 * M_PI) / 60;
+  }
+
+  /**
+   * Conversion of radians to encoder ticks. Note that this assumes a
+   * 1024-line quadrature encoder (hence 4096).
+   *
+   * @param x Angular position in radians.
+   * @return Angular position in encoder ticks.
+   */
+  static double to_encoder_ticks(double x)
+  {
+    return x * ENCODER_TICKS / (2 * M_PI);
+  }
+
+  /**
+   * Conversion of encoder ticks to radians. Note that this assumes a
+   * 1024-line quadrature encoder (hence 4096).
+   *
+   * @param x Angular position in encoder ticks.
+   * @return Angular position in radians.
+   */
+  static double from_encoder_ticks(double x)
+  {
+    return x * (2 * M_PI) / ENCODER_TICKS;
+  }
+
   void cmdCallback(const roboteq_msgs::Command&);
-  void timerCallback(const ros::TimerEvent&);
+  void timeoutCallback(const ros::TimerEvent&);
 
   ros::NodeHandle nh_;
   boost::shared_ptr<Controller> controller_;
@@ -52,9 +101,12 @@ protected:
 
   ros::Subscriber sub_cmd_;
   ros::Publisher pub_feedback_;
-  ros::Timer timer_init_;
+  ros::Publisher pub_status_;
+  ros::Publisher pub_id_;
+  ros::Timer timeout_timer_;
 
   ros::Time last_feedback_time_;
+  uint8_t last_mode_;
 };
 
 }

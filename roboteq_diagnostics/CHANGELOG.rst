@@ -2,6 +2,9 @@
 Changelog for package roboteq_diagnostics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.2.0 (2015-10-16)
+------------------
+
 0.1.2 (2015-01-09)
 ------------------
 * Add queue_size, fixes `#4 <https://github.com/g/roboteq//issues/4>`_

@@ -1,0 +1,30 @@
+<launch>
+  <group ns="drive0">
+    <node pkg="roboteq_driver" type="driver_node" name="roboteq_driver" output="screen">
+      <param name="port" value="/dev/ttyACM0" />
+      <param name="baud" value="115200" />
+    </node>
+  </group>
+
+  <group ns="drive1">
+    <node pkg="roboteq_driver" type="driver_node" name="roboteq_driver" output="screen">
+      <param name="port" value="/dev/ttyACM1" />
+      <param name="baud" value="115200" />
+    </node>
+  </group>
+
+  <group ns="drive2">
+    <node pkg="roboteq_driver" type="driver_node" name="roboteq_driver" output="screen">
+      <param name="port" value="/dev/ttyACM2" />
+      <param name="baud" value="115200" />
+    </node>
+  </group>
+
+  <group ns="drive3">
+    <node pkg="roboteq_driver" type="driver_node" name="roboteq_driver" output="screen">
+      <param name="port" value="/dev/ttyACM3" />
+      <param name="baud" value="115200" />
+    </node>
+  </group>
+
+</launch>
