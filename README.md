@@ -1,6 +1,8 @@
 roboteq
 =======
 
+[![Build Status](https://travis-ci.org/WalkingMachine/roboteq.svg?branch=master)](https://travis-ci.org/WalkingMachine/roboteq)
+
 ROS VERSION: [Kinetic](http://wiki.ros.org/kinetic)
 
 ROS driver for serial Roboteq motor controllers. This driver is suitable for use with Roboteq's
