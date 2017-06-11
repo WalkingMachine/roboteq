@@ -42,6 +42,7 @@ class Channel;
 
 class Controller {
   friend class Channel;
+  friend class WMRoboteqHardwareInterface;
 
 private :
   const char *port_;
@@ -52,6 +53,7 @@ private :
   serial::Serial *serial_;
   std::stringstream tx_buffer_;
   std::vector<Channel*> channels_;
+  std::vector<std::string>last_feedback_;
 
   ros::NodeHandle nh_;
   ros::Publisher pub_status_;
@@ -115,6 +117,7 @@ public :
   Controller (const char *port, int baud);
   ~Controller();
   int id;
+  bool use_channels;
   void addChannel(Channel* channel);
   void connect();
   void getId();

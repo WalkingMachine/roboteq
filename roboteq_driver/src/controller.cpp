@@ -191,8 +191,14 @@ void Controller::processStatus(std::string str) {
 void Controller::processFeedback(std::string msg) {
   std::vector<std::string> fields;
   boost::split(fields, msg, boost::algorithm::is_any_of(":"));
-  if (fields.size() != 11) {
+  if (fields.size() != 11)
+  {
     ROS_WARN("Wrong number of feedback fields. Dropping message.");
+    return;
+  }
+  if(!use_channels)
+  {
+    last_feedback_ = fields;
     return;
   }
   int channel_num;
@@ -235,6 +241,11 @@ void Controller::processId(std::string str) {
   pub_id_.publish(msg);
 
   return;
+}
+
+void controller::getFeedback(std::vector<std::string>& last_feedback)
+{
+  last_feedback = from_rpm(boost::lexical_cast<double>(last_feedback_[5]));
 }
 
 void Controller::getId() {
