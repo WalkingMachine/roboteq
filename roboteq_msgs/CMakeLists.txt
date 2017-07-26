@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS message_generation std_msgs)
 # Generate messages in the 'msg' folder
 add_message_files(
   FILES
+  Id.msg
   Command.msg
   Feedback.msg
   Status.msg

@@ -36,14 +36,17 @@ namespace roboteq_msgs {
   ROS_DECLARE_MESSAGE(Feedback);
 }
 
+extern int id;
+
 namespace roboteq {
 
 class Controller;
 
 class Channel {
 public:
-  Channel(int channel_num, std::string ns, Controller* controller);
+  Channel(int channel_num, std::string ns, Controller* controller, int ID);
   void feedbackCallback(std::vector<std::string>);
+  void SetTopics(std::string id);
 
 protected:
   /**
@@ -98,6 +101,8 @@ protected:
 
   ros::Subscriber sub_cmd_;
   ros::Publisher pub_feedback_;
+  ros::Publisher pub_status_;
+  ros::Publisher pub_id_;
   ros::Timer timeout_timer_;
 
   ros::Time last_feedback_time_;

@@ -30,36 +30,47 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "~");
+  ros::init(argc, argv, "drive");
   ros::NodeHandle nh("~");
 
-  std::string port = "/dev/ttyUSB0";
+  // std::string port = "/dev/ttyUSB0";
+  std::string port;
   int32_t baud = 115200;
-  nh.param<std::string>("port", port, port);
-  nh.param<int32_t>("baud", baud, baud);
+  nh.getParam("port", port);
+  nh.getParam("baud", baud);
 
   // Interface to motor controller.
   roboteq::Controller controller(port.c_str(), baud);
 
+  while (!controller.connected()) {
+    controller.connect();
+    ROS_INFO("POST USED : %s", port.c_str());
+    sleep(1);
+  }
+  controller.getId();
+  ROS_INFO("ID: %i", controller.id);
+
+  std::string ns = "/drive" + boost::lexical_cast<std::string>(controller.id);
   // Setup channels.
   if (nh.hasParam("channels")) {
     XmlRpc::XmlRpcValue channel_namespaces;
     nh.getParam("channels", channel_namespaces);
     ROS_ASSERT(channel_namespaces.getType() == XmlRpc::XmlRpcValue::TypeArray);
-    for (int i = 0; i < channel_namespaces.size(); ++i) 
+    for (int i = 0; i < channel_namespaces.size(); ++i)
     {
+      ROS_INFO("THERE IS A CHANNEL");
       ROS_ASSERT(channel_namespaces[i].getType() == XmlRpc::XmlRpcValue::TypeString);
-      controller.addChannel(new roboteq::Channel(1 + i, channel_namespaces[i], &controller));
+      controller.addChannel(new roboteq::Channel(1 + i, ns, &controller, controller.id));
     }
   } else {
-    // Default configuration is a single channel in the node's namespace.
-    controller.addChannel(new roboteq::Channel(1, "~", &controller));
-  } 
+    ROS_INFO("NO CHANNEL, will use default /drive<ID> ");
 
+    // Default configuration is a single channel in the node's namespace.
+    controller.addChannel(new roboteq::Channel(1, ns, &controller, controller.id));
+  }
   // Attempt to connect and run.
   while (ros::ok()) {
-    ROS_DEBUG("Attempting connection to %s at %i baud.", port.c_str(), baud);
-    controller.connect();
+    ROS_DEBUG("Connection to %s at %i baud is successful.", port.c_str(), baud);
     if (controller.connected()) {
       ros::AsyncSpinner spinner(1);
       spinner.start();
@@ -71,7 +82,7 @@ int main(int argc, char **argv) {
       ROS_DEBUG("Problem connecting to serial device.");
       ROS_ERROR_STREAM_ONCE("Problem connecting to port " << port << ". Trying again every 1 second.");
       sleep(1);
-    }  
+    }
   }
 
   return 0;

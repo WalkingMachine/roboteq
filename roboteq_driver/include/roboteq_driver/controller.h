@@ -55,12 +55,15 @@ private :
 
   ros::NodeHandle nh_;
   ros::Publisher pub_status_;
+  ros::Publisher pub_id_;
 
   void read();
   void write(std::string);
 
   void processStatus(std::string msg);
   void processFeedback(std::string msg);
+  void processId(std::string msg);
+  void setID(std::string str);
 
 protected:
   // These data members are the core of the synchronization strategy in this class.
@@ -111,9 +114,10 @@ protected:
 public :
   Controller (const char *port, int baud);
   ~Controller();
-
+  int id;
   void addChannel(Channel* channel);
   void connect();
+  void getId();
   bool connected() { return connected_; }
   void spinOnce() { read(); }
   void flush();
@@ -127,7 +131,6 @@ public :
   void stopScript() { command << "R" << 0 << send; }
   void setUserVariable(int var, int val) { command << "VAR" << var << val << send; }
   void setUserBool(int var, bool val) { command << "B" << var << (val ? 1 : 0) << send; }
-  //bool downloadScript();
 
   void setSerialEcho(bool serial_echo) { param << "ECHOF" << (serial_echo ? 0 : 1) << sendVerify; }
 };

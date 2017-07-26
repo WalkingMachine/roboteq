@@ -28,17 +28,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/ros.h"
 #include "roboteq_msgs/Feedback.h"
+#include "roboteq_msgs/Status.h"
+#include "roboteq_msgs/Id.h"
 #include "roboteq_msgs/Command.h"
 
+extern int id;
 
 namespace roboteq {
 
-Channel::Channel(int channel_num, std::string ns, Controller* controller) :
+Channel::Channel(int channel_num, std::string ns, Controller* controller, int ID) :
   channel_num_(channel_num), nh_(ns), controller_(controller), max_rpm_(MAX_RPM),
   last_mode_(255)
-{      
-  sub_cmd_ = nh_.subscribe("cmd", 1, &Channel::cmdCallback, this);
-  pub_feedback_ = nh_.advertise<roboteq_msgs::Feedback>("feedback", 1);
+{
+  id = ID;
+  pub_feedback_ = nh_.advertise<roboteq_msgs::Feedback>("feedback" + boost::lexical_cast<std::string>(id), 1);
+  sub_cmd_ = nh_.subscribe("cmd" + boost::lexical_cast<std::string>(id), 1, &Channel::cmdCallback, this);
 
   // Don't start this timer until we've received the first motion command, otherwise it
   // can interfere with code download on device startup.

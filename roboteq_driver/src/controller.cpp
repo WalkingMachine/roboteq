@@ -27,6 +27,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "roboteq_driver/channel.h"
 
 #include "roboteq_msgs/Status.h"
+#include "roboteq_msgs/Id.h"
 #include "serial/serial.h"
 
 #include <boost/bind.hpp>
@@ -39,21 +40,24 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 
 // Link to generated source from Microbasic script file.
-//extern const char* script_lines[];
 extern const int script_ver = 30;
+extern const char* script_lines[];
+
+int id;
+ros::Publisher pub_id_;
+ros::Publisher pub_status_;
 
 namespace roboteq {
 
 const std::string eol("\r");
 const size_t max_line_length(128);
 
+bool idReady = false;
+
 Controller::Controller(const char *port, int baud)
   : nh_("~"), port_(port), baud_(baud), connected_(false), receiving_script_messages_(false),
     version_(""), start_script_attempts_(0), serial_(NULL),
-    command("!", this), query("?", this), param("^", this)
-{
-  pub_status_ = nh_.advertise<roboteq_msgs::Status>("status", 1);
-}
+    command("!", this), query("?", this), param("^", this){}
 
 Controller::~Controller() {
 }
@@ -68,6 +72,9 @@ void Controller::connect() {
   serial_->setTimeout(to);
   serial_->setPort(port_);
   serial_->setBaudrate(baud_);
+
+  ROS_INFO("PORT: %s", port_);
+  ROS_INFO("BAUD: %i", baud_);
 
   for (int tries = 0; tries < 5; tries++) {
     try {
@@ -109,6 +116,9 @@ void Controller::read() {
       } else if (msg[1] == 'f') {
         processFeedback(msg);
       }
+      else if (msg[1] == 'i') {
+        processId(msg);
+      }
     } else {
       // Unknown other message.
       ROS_WARN_STREAM("Unknown serial message received: " << msg);
@@ -121,12 +131,6 @@ void Controller::read() {
         ROS_DEBUG("Attempt #%d to start MBS program.", start_script_attempts_);
         startScript();
         flush();
-      } else {
-        ROS_DEBUG("Attempting to download MBS program.");
-        //if (downloadScript()) {
-          //start_script_attempts_ = 0;
-        //}	
-        ros::Duration(1.0).sleep();
       }
     } else {
       ROS_DEBUG("Script is believed to be in-place and running, so taking no action.");
@@ -152,7 +156,7 @@ void Controller::processStatus(std::string str) {
   msg.header.stamp = ros::Time::now();
 
   std::vector<std::string> fields;
-  boost::split(fields, str, boost::algorithm::is_any_of(":"));	
+  boost::split(fields, str, boost::algorithm::is_any_of(":"));
   try {
     int reported_script_ver = boost::lexical_cast<int>(fields[1]);
     static int wrong_script_version_count = 0;
@@ -163,7 +167,7 @@ void Controller::processStatus(std::string str) {
         ROS_WARN_STREAM("Script version mismatch. Expecting " << script_ver <<
             " but controller consistently reports " << reported_script_ver << ". " <<
             ". Now attempting download.");
-        //downloadScript();
+
       }
       return;
     }
@@ -179,7 +183,7 @@ void Controller::processStatus(std::string str) {
   } catch (std::bad_cast& e) {
     ROS_WARN("Failure parsing status data. Dropping message.");
     return;
-  }		
+  }
 
   pub_status_.publish(msg);
 }
@@ -206,44 +210,81 @@ void Controller::processFeedback(std::string msg) {
   }
 }
 
-/*bool Controller::downloadScript() {
-  ROS_DEBUG("Commanding driver to stop executing script.");
+void Controller::processId(std::string str) {
+  std::vector<std::string> fields;
+  roboteq_msgs::Id msg;
+  boost::split(fields, str, boost::algorithm::is_any_of(":"));
+  if (fields.size() != 3) {
+    ROS_WARN("ProcessId: Wrong number of feedback fields. Dropping message.");
+    return;
+  }
 
-  // Stop the running script, flag us to start it up again after..
-  stopScript();
-  flush();
-  receiving_script_messages_ = false;
+  try {
+    msg.id = boost::lexical_cast<int>(fields[2]);
+  } catch (std::bad_cast& e) {
+    ROS_WARN("Failure parsing id channel number. Dropping message.");
+    return;
+  }
 
-  // Clear serial buffer to avoid any confusion.
-  ros::Duration(0.5).sleep();
-  serial_->read();
+  if (!idReady) {
+    id = msg.id;
+    idReady = true;
+  }
 
-  // Send SLD.
-  ROS_DEBUG("Commanding driver to enter download mode.");
-  write("%SLD 321654987"); flush();
+  // Publish on ros topic
+  pub_id_.publish(msg);
 
-  // Look for special ack from SLD.
-  for (int find_ack = 0; find_ack < 7; find_ack++) {
+  return;
+}
+
+void Controller::getId() {
+
+  bool idSet = false;
+
+  while( !idSet ){
+
+    ROS_DEBUG_STREAM_NAMED("serial", "Bytes waiting: " << serial_->available());
     std::string msg = serial_->readline(max_line_length, eol);
-    ROS_DEBUG_STREAM_NAMED("serial", "HLD-RX: " << msg);
-    if (msg == "HLD\r") goto found_ack;
+    if (!msg.empty()) {
+      ROS_DEBUG_STREAM_NAMED("serial", "RX: " << msg);
+      if (msg[0] == '+' || msg[0] == '-') {
+        // Notify the ROS thread that a message response (ack/nack) has arrived.
+        boost::lock_guard<boost::mutex> lock(last_response_mutex_);
+        last_response_ = msg;
+        last_response_available_.notify_one();
+      } else if (msg[0] == '&') {
+        receiving_script_messages_ = true;
+        // Message generated by the Microbasic script.
+        boost::trim(msg);
+        if (msg[1] == 'i') {
+          setID(msg);
+          idSet = true;
+        }
+      }
+    }
   }
-  ROS_DEBUG("Could not enter download mode.");
-  return false;
-  found_ack:
 
-  // Send hex program, line by line, checking for an ack from each line.
-  int line_num = 0;
-  while(script_lines[line_num]) {
-    std::string line(script_lines[line_num]);
-    write(line);
-    flush();
-    std::string ack = serial_->readline(max_line_length, eol);
-    ROS_DEBUG_STREAM_NAMED("serial", "ACK-RX: " << ack);
-    if (ack != "+\r") return false;
-    line_num++;
+  pub_status_ = nh_.advertise<roboteq_msgs::Status>("status" + boost::lexical_cast<std::string>(id), 1);
+  pub_id_ = nh_.advertise<roboteq_msgs::Id>("id", 1);
+
+}
+
+
+void Controller::setID(std::string str) {
+  std::vector<std::string> fields;
+  boost::split(fields, str, boost::algorithm::is_any_of(":"));
+  if (fields.size() != 3) {
+    ROS_WARN("setID: Wrong number of fields, must be 3. Dropping message.");
+    return;
   }
-  return true;
-} */
+
+  try {
+    id = boost::lexical_cast<int>(fields[2]);
+  } catch (std::bad_cast& e) {
+    ROS_WARN("Failure parsing id channel number. Dropping message.");
+    return;
+  }
+  return;
+}
 
 }  // namespace roboteq
