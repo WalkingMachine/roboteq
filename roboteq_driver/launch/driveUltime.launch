@@ -35,4 +35,32 @@
     </node>
   </group>
 
+  <group ns="drive5">
+    <node pkg="roboteq_driver" type="driver_node" name="roboteq_driver">
+      <param name="port" value="/dev/drive5" />
+      <param name="baud" value="115200" />
+    </node>
+  </group>
+
+  <group ns="drive6">
+    <node pkg="roboteq_driver" type="driver_node" name="roboteq_driver">
+      <param name="port" value="/dev/drive6" />
+      <param name="baud" value="115200" />
+    </node>
+  </group>
+
+  <group ns="drive7">
+    <node pkg="roboteq_driver" type="driver_node" name="roboteq_driver">
+      <param name="port" value="/dev/drive7" />
+      <param name="baud" value="115200" />
+    </node>
+  </group>
+
+  <group ns="drive8">
+    <node pkg="roboteq_driver" type="driver_node" name="roboteq_driver">
+      <param name="port" value="/dev/drive8" />
+      <param name="baud" value="115200" />
+    </node>
+  </group>
+
 </launch>
