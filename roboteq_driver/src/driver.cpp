@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
   // Interface to motor controller.
   roboteq::Controller controller(port.c_str(), baud);
 
-  while (!controller.connected()) {
+  while (!controller.connected() && ros::ok()) {
     controller.connect();
     ROS_INFO("POST USED : %s", port.c_str());
     sleep(1);
