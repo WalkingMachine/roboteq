@@ -1,30 +1,44 @@
 #!/usr/bin/env python
 import roslaunch
+import rospy
 from os import listdir
-from rospy import is_shutdown, sleep
 
-launchPath = '../launch/drive.launch'
-devPath = '/dev/SARA/drives/'
-launchPortBase = 'port:='+devPath
-nameBase = 'name:='
+package = 'roboteq_driver'
+executable = 'driver_node'
+devPath = '/dev/SARA/motors/roboteq/'
+launchPortBase = '_port:='+devPath
+nameBase = "name:=roboteq_drive_"
 
-uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
-roslaunch.configure_logging(uuid)
+while not rospy.is_shutdown():
 
-while not is_shutdown():
+    rospy.init_node('en_Mapping', anonymous=True)
+    uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+    roslaunch.configure_logging(uuid)
+
     try:
+
         for name in listdir(devPath):
             print("name:="+str(name))
 
-            cli_args = [launchPath, launchPortBase+name, nameBase+name]
-            roslaunch_args = cli_args[1:]
-            roslaunch_file = [(roslaunch.rlutil.resolve_launch_arguments(cli_args)[0], roslaunch_args)]
+            node = roslaunch.core.Node(package, executable)
+            node.args = launchPortBase+name
+            launch = roslaunch.scriptapi.ROSLaunch()
+            launch.start()
 
-            parent = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file)
+            process = launch.launch(node)
+            print process.is_alive()
 
-            parent.start()
 
-            break
     except:
         print('No roboteq drive connected. Checking every 5 seconds.')
-        sleep(5)
+        rospy.sleep(5)
+        continue
+
+    break
+
+
+print('All roboteq drives have started.')
+while not rospy.is_shutdown():
+    rospy.sleep(1)
+process.stop()
+#launch.spin()
